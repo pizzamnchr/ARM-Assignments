@@ -1,0 +1,293 @@
+# Data section is used for declaring data/constants used in the program
+
+.section .data
+
+inputPrompt    :  .asciz  "Input a string: "
+
+inputSpec      :  .asciz  "%[^\n]"
+
+lengthSpec     :  .asciz  "String length: %d\n"
+
+palindromeSpec :  .asciz  "String is a palindrome (T/F): %c\n"
+
+# Reserving memory for the user's string which will be no more than 7 characters in length
+
+usersString    :  .space 7
+
+# Text section is used for storing the actual code of the program
+
+.section .text
+
+.global main
+
+# Program execution begins here in the main method like in C/C++
+
+main:
+
+# Add code and other labels here
+
+    # Loading the input prompt into register x0 where we ask the user to input a string
+
+    ldr x0, =inputPrompt
+
+    # Printing the input prompt to the user using the printf function from C/C++
+
+    bl printf
+
+    # Loading the input specification into register x0 for the user's string
+
+    ldr x0, =inputSpec
+
+    # Loading the memory for the user's string into register x1
+
+    ldr x1, =usersString
+
+    # Taking in the user's string using the scanf function from C/C++
+
+    bl scanf
+
+    # Loading the memory for the user's string into register x19 in preparation to get the length of the user's string
+
+    ldr x19, =usersString
+
+    # Using register x20 as the start of the loop to get the length of the user's string
+
+    add x20, xzr, xzr
+
+    # Using register x22 as the end of the loop to get the length of the user's string
+
+    add x22, xzr, xzr
+
+    # Branching to the loop where we will get the length of the user's string
+
+    b determineStringLength
+
+# Code that will show the length of the user's string
+
+usersStringLength: 
+
+    # Loading the length specification into register x0 for the length of the user's string
+
+    ldr x0, =lengthSpec
+
+    # Putting the length of the user's string into register x1 to show the user
+
+    mov x1, x22
+
+    # Printing the length of the string to the user using the printf function from C/C++
+    
+    bl printf
+
+    # Loading the input specification into register x0 for the user's string
+    
+    ldr x0, =inputSpec
+
+    # Loading the memory for the user's string into register x1
+
+    ldr x1, =usersString
+
+    # Taking in the user's string using the scanf function from C/C++
+
+    bl scanf
+
+    # Branching into the code that will show the user if their string is a palindrome or not
+
+    b usersStringPalindrome
+
+# Code that will show the user if their string is a palindrome or not
+
+usersStringPalindrome:
+
+    # Adding 0 and the length of the string in register x22 and store the result in register x10
+
+    add x10, xzr, x22
+
+    # cbz -> If the result in register x10 is a 0 (meaning the user entered nothing), branch off to the code that will say that the string is a palindrome
+
+    cbz x10, stringIsPalindrome
+
+    # Puting 1 into temporary register x11
+
+    mov x11, 1
+
+    # Subtracting register x11 by the string's length in register x22 and store the result in register x12
+
+    sub x12, x11, x22
+
+    # cbz -> If the result in register x12 is a 0 (meaning the user only entered one character), branch off to the code that will say that the string is a palindrome
+
+    cbz x12, stringIsPalindrome
+
+    # Adding 0 to register x20 in preparation to check if the user's string is a palindrome or not
+
+    add x20, xzr, xzr
+
+    # If the length of the user's string is not 0 or 1, we will branch off to the code that will check the user's entire string and determine if it's a palindrome or not
+
+    b determineStringPalindrome
+
+# Code that will determine the length of the user's string
+
+determineStringLength:
+
+# Looping through the user's inputted string and determining it's length
+
+    # Loading the string's character by the byte into a temporary register
+
+    ldrb w15, [x19, x20]
+
+    # Add 0 to register x13
+
+    add x13, xzr, xzr
+
+    # Subtract the string's character in register x15 by the 0 in x13 and store the result in register x14
+
+    sub x14, x15, x13
+
+    # cbnz -> If the result in x14 is not a 0, branch off into the code that will increase the string's length count
+
+    cbnz x14, increaseStringLengthCount
+
+    # Going to the next character in the user's inputted string
+
+    add x20, x20, 1
+
+    # Putting the maximum string length of 7 into register x11
+
+    mov x11, 7
+
+    # Subtracting register x11 and register x20 and storing the result in x12
+
+    sub x12, x11, x20
+
+    # cbz -> If the result in register x12 is a 0, we are done and will now branch off to the code that will show the user the length of their string
+
+    cbz x12, usersStringLength
+
+    # Else, we just branch back to the beginning of the code and check the next character of the user's string
+
+    b determineStringLength
+
+# Code that will check the user's entire string to determine if it's a palindrome or not
+
+determineStringPalindrome:
+
+    # Loading the first character of the string into a temporary register
+
+    ldrb w10, [x19, x20]
+
+    # Subtracting the length of the user's string by the 0 in register x20 and storing the result in register x13
+
+    sub x13, x22, x20
+
+    # Subtracting register x13 by 1 and storing the result in register x13
+
+    sub x13, x13, 1
+
+    # Loading the last character of the string into a temporary register
+
+    ldrb w11, [x19, x13]
+
+    # Subtracting the first and last characters of the string and storing the result into register x14
+
+    sub x14, x10, x11
+
+    # cbnz -> If the result is not a 0 (meaning the characters are different), branch off to the code that will say that the string is not a palindrome
+
+    cbnz x14, stringIsntPalindrome
+
+    # Going to the next character in the user's inputted string
+
+    add x20, x20, 1
+
+    # Subtracting the length of the user's string by the 1 in register x20 and storing the result in register x9
+
+    sub x9, x22, x20
+
+    # cbz -> If the result in register x9 is a 0 (meaning the characters are the same), branch off to the code that will say that the string is a palindrome
+
+    cbz x9, stringIsPalindrome
+
+    # Else, we will branch back to the beginning of the code and check the next character of the user's string
+
+    b determineStringPalindrome
+
+# Code that will increase the length count of the user's string
+
+increaseStringLengthCount:
+
+    # Adding 1 to register x22 and storing the result in register x22, this register will store the length of the user's string
+
+    add x22, x22, 1
+
+    # Going to the next character in the user's inputted string
+
+    add x20, x20, 1
+
+    # Putting the maximum string length of 7 into register x11
+
+    mov x11, 7
+
+    # Subtracting register x11 and register x20 and storing the result in x12
+
+    sub x12, x11, x20
+
+    # cbz -> If the result in register x12 is a 0, we are done and will now branch off to the code that will show the user the length of their string
+
+    cbz x12, usersStringLength
+
+    # Else, we will branch back and check the next character of the user's string
+
+    b determineStringLength
+
+# Code that will say that the user's string is a palindrome
+
+stringIsPalindrome:
+
+    # Loading the palindrome specification into register x0 for showing the palindrome decision
+
+    ldr x0, =palindromeSpec
+
+    # Putting the letter T into a register to be printed
+
+    mov w1, 84
+
+    # Printing the letter T, showing the user that their string is not a palindrome using the printf function from C/C++
+
+    bl printf
+
+    # Branching to the code that will exit the program
+
+    b exit
+
+# Code that will say that the user's string is not a palindrome
+
+stringIsntPalindrome:
+
+    # Loading the palindrome specification into register x0 for showing the palindrome decision
+
+    ldr x0, =palindromeSpec
+
+    # Putting the letter F into a register to be printed
+
+    mov w1, 70
+
+    # Printing the letter F, showing the user that their string is not a palindrome using the printf function from C/C++
+
+    bl printf
+
+    # Branching to the code that will exit the program
+
+    b exit
+
+# Code that will execute after the program is finished
+
+exit:
+
+    mov x0, 0
+
+    mov x8, 93
+
+    svc 0
+
+    ret

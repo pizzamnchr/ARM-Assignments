@@ -1,0 +1,197 @@
+# Data section is used for declaring data/constants used in the program
+
+.section .data
+
+input_x_prompt	:	.asciz	"Please enter x: "
+input_y_prompt	:	.asciz	"Please enter y: "
+input_spec	:	.asciz	"%d"
+result		:	.asciz	"x^y = %d\n"
+
+# Text section is used for storing the actual code of the program
+
+.section .text
+
+.global main
+
+# Program execution begins here in the main method like in C/C++
+
+main:
+
+# Add code and other labels here
+
+	# Loading the input prompt into register x0 where we ask the user to input x
+	
+	ldr x0, =input_x_prompt
+	
+	# Printing the input prompt for x to the user using the printf function from C/C++
+	
+	bl printf
+	
+	# Branching into the code to get the value that the user inputted
+	
+	bl getUserInput
+	
+	# Storing the user inputted value that we have in x0 into register x19, a permanent register
+	
+	mov x19, x0
+	
+	# Loading the input prompt into register x0 where we ask the user to input y
+	
+	ldr x0, =input_y_prompt
+
+	# Printing the input prompt for y to the user using the printf function from C/C++
+	
+	bl printf
+	
+	# Branching into the code to get the value that the user inputted
+	
+	bl getUserInput
+	
+	# Storing the user inputted value that we have in x0 into register x20, another permanent register
+	
+	mov x20, x0
+	
+	# Storing the user inputted values into registers x0 and x1 to be used by the code that will handle exponents
+	
+	mov x0, x19
+	
+	mov x1, x20
+	
+	# Branching into the code that will handle the calculation of the exponents
+
+	bl exponentMain
+	
+	# Storing the result into registers x1 and x2
+
+	mov x1, x2
+	
+	# Loading the output prompt into register x0 where we will show the user the result
+
+	ldr x0, =result
+
+	# Printing the result to the user using the printf function from C/C++
+	
+	bl printf
+	
+	# Branching into the code that will exit the program
+	
+	b exit
+
+# The main code that will handle the calculation of the exponents and decide what to return
+exponentMain:
+	
+	# Using subs to see if y (which is in register x1) is less than 1
+	subs x9, x1, xzr
+
+	# Branching into the code that will do the actual work for calculating a normal exponent (where y is greater than / equal to 1)
+	b.gt exponentRegular
+
+	# Using cbz to see if y (which is in register x1) is equal to 0, if it is, we will return a 1 since numbers to the power of 0 are 1
+	cbz x1, getOne
+
+	# Branching into the code that will return a 0 if y is less than 1
+	b getZero
+
+# The recursive code that will do the actual work for calculating a normal exponent (where y is greater than / equal to 1)
+exponentRegular:
+
+	# Using subs to see if y is equal to 1, if it is, we will just have to return x (which is in register x0)
+	subs x11, x1, 1
+
+	b.eq getX
+
+	# Whipping up a stack frame for the code to use
+	sub sp, sp, 32
+
+	stur x0, [sp, 24]
+
+	stur x1, [sp, 16]
+
+	stur x29, [sp, 8]
+
+	stur x30, [sp, 0]
+	
+	# We're gonna iterate down by 1 for the next call of this code
+	sub x1, x1, 1
+	
+	# Branching into the code that will handle the calculation of the exponents and decide what to return
+	bl exponentMain
+	
+	# Restoring the stack frame to prevent any overflow from occurring
+	ldur x0, [sp, 24]
+
+	ldur x1, [sp, 16]
+
+	ldur x29, [sp, 8]
+
+	ldur x30, [sp, 0]
+
+	add sp, sp, 32
+	
+	# Using the result from our recursive code (which is in register x2) to multiply to x (which is in register x0)
+	mul x2, x2, x0
+
+	ret
+	
+# The code for getting the user inputted values
+getUserInput:
+
+	# Whipping up a stack frame for the code to use
+	sub sp, sp, 8
+
+	str x30, [sp]
+
+	# Using register x0 to store the user inputted value
+	ldr x0, =input_spec
+
+	# Whipping up some more room for the code to use
+	sub sp, sp, 8
+
+	mov x1, sp
+
+	# Taking in the user inputted value using the scanf function from C/C++
+	bl scanf
+
+	# Loading the user inputted value into register x0
+	ldrsw x0, [sp]
+
+	ldr x30, [sp, 8]
+
+	add sp, sp, 16
+
+	ret
+	
+# The code for getting x if y happens to be equal to 1
+getX:
+	
+	# Moving x (which is in register x0) into register x2 to be returned
+	mov x2, x0
+
+	ret
+	
+# The code for getting 1 if y happens to be equal to 0
+getOne:
+
+	# Putting 1 into register x2 to be returned
+	mov x2, 1
+
+	ret
+
+# The code for getting 0 if y happens to be less than 0
+getZero:
+
+	# Putting 0 into register x2 to be returned
+	add x2, xzr, xzr
+
+	ret
+	
+# The code that will exit the program when everything is done
+exit:
+
+	mov x0, 0
+
+	mov x8, 93
+
+	svc 0
+	
+	ret
